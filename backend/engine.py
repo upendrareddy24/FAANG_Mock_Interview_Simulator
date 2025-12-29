@@ -8,8 +8,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from .offline_engine import OfflineEngine
+
 class InterviewEngine:
     def __init__(self):
+        self.offline_engine = OfflineEngine()
         genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
         # Dynamic Model Discovery
         try:
@@ -18,6 +21,7 @@ class InterviewEngine:
             
             # Substrings to look for in order of preference
             preferences = [
+                "gemini-2.0-flash-exp",
                 "gemini-2.0-flash",
                 "gemini-1.5-flash",
                 "gemini-1.5-pro",
@@ -34,7 +38,7 @@ class InterviewEngine:
             # Fallback if discovery fails or finds nothing suitable
             if not self.prioritized_models:
                  print("Warning: No preferred models found. Using hardcoded fallbacks.")
-                 self.prioritized_models = ["models/gemini-1.5-flash", "models/gemini-pro"]
+                 self.prioritized_models = ["gemini-1.5-flash", "gemini-pro"]
                  
         except Exception as e:
             print(f"Failed to list models: {e}. Using fallbacks.")
@@ -125,7 +129,8 @@ Conduct a realistic, challenging FAANG-level interview.
         try:
             return self._generate_with_retry(run_chat)
         except Exception as e:
-            return f"Interviewer connection error: {str(e)}"
+            print(f"API Error in get_interviewer_response: {e}. Switching to Offline Mode.")
+            return self.offline_engine.get_interviewer_response(session, user_input)
 
     def evaluate_round(self, session: CandidateSession) -> Dict[str, Any]:
         evaluation_prompt = f"""
@@ -161,4 +166,5 @@ Provide a detailed evaluation in JSON format with the following fields:
         try:
             return self._generate_with_retry(run_eval)
         except Exception as e:
-            return {"error": f"Evaluation failed: {str(e)}"}
+            print(f"API Error in evaluate_round: {e}. Switching to Offline Mode.")
+            return self.offline_engine.evaluate_round(session)
