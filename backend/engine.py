@@ -11,7 +11,34 @@ load_dotenv()
 class InterviewEngine:
     def __init__(self):
         genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-        self.model = genai.GenerativeModel("models/gemini-2.0-flash") # Available in env
+        self.model_name = self._get_available_model()
+        print(f"Selected Gemini Model: {self.model_name}")
+        self.model = genai.GenerativeModel(self.model_name)
+
+    def _get_available_model(self) -> str:
+        """
+        Dynamically selects the best available Gemin model from a prioritized list.
+        """
+        prioritized_models = [
+            "models/gemini-2.0-flash",
+            "models/gemini-1.5-flash",
+            "models/gemini-1.5-pro",
+            "gemini-1.5-flash",
+            "gemini-pro"
+        ]
+        
+        try:
+            available_models = [m.name for m in genai.list_models()]
+            for model in prioritized_models:
+                if model in available_models:
+                    return model
+            
+            # Fallback if strict match fails (try partial match or default)
+            return prioritized_models[0]
+        except Exception as e:
+            print(f"Warning: Could not list models ({e}). Defaulting to {prioritized_models[0]}")
+            return prioritized_models[0]
+
 
 
 
@@ -59,9 +86,10 @@ Current Interview State: {session.current_state.state}
         
         # Initialize model with system prompt
         model = genai.GenerativeModel(
-            model_name="models/gemini-2.0-flash",
+            model_name=self.model_name,
             system_instruction=system_prompt
         )
+
 
 
 
