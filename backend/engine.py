@@ -12,10 +12,9 @@ class InterviewEngine:
     def __init__(self):
         genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
         self.prioritized_models = [
-            "models/gemini-2.0-flash",
-            "models/gemini-1.5-flash",
-            "models/gemini-1.5-pro",
+            "gemini-2.0-flash-exp",
             "gemini-1.5-flash",
+            "gemini-1.5-pro",
             "gemini-pro"
         ]
         self.current_model_index = 0
