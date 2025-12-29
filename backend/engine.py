@@ -11,14 +11,37 @@ load_dotenv()
 class InterviewEngine:
     def __init__(self):
         genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-        self.prioritized_models = [
-            "gemini-2.0-flash-exp",
-            "gemini-1.5-flash",
-            "gemini-1.5-pro",
-            "gemini-pro"
-        ]
+        # Dynamic Model Discovery
+        try:
+            available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+            print(f"Available models: {available_models}")
+            
+            # Substrings to look for in order of preference
+            preferences = [
+                "gemini-2.0-flash",
+                "gemini-1.5-flash",
+                "gemini-1.5-pro",
+                "gemini-pro",
+                "gemini-1.0-pro"
+            ]
+            
+            self.prioritized_models = []
+            for pref in preferences:
+                for model_name in available_models:
+                    if pref in model_name and model_name not in self.prioritized_models:
+                        self.prioritized_models.append(model_name)
+            
+            # Fallback if discovery fails or finds nothing suitable
+            if not self.prioritized_models:
+                 print("Warning: No preferred models found. Using hardcoded fallbacks.")
+                 self.prioritized_models = ["models/gemini-1.5-flash", "models/gemini-pro"]
+                 
+        except Exception as e:
+            print(f"Failed to list models: {e}. Using fallbacks.")
+            self.prioritized_models = ["gemini-1.5-flash", "gemini-pro"]
+
         self.current_model_index = 0
-        self.model_name = self.prioritized_models[0] # Start with best, fallback dynamic
+        print(f"Using models: {self.prioritized_models}")
 
     def _get_model(self, model_name: str, system_prompt: str = None):
         return genai.GenerativeModel(

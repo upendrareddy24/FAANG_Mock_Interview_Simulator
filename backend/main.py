@@ -5,6 +5,7 @@ import uuid
 
 from .models import CandidateSession, InterviewState, InterviewState
 from .engine import InterviewEngine
+from .offline_engine import OfflineEngine
 from .personas import COMPANY_PERSONAS
 
 app = FastAPI(title="FAANG Interview Simulator API")
@@ -29,8 +30,8 @@ async def startup_event():
         print("InterviewEngine initialized successfully")
     except Exception as e:
         print(f"Failed to initialize InterviewEngine: {e}")
-        # We don't raise here so the app can still start and serve /health
-        engine = None
+        print("Falling back to OfflineEngine (Static Mode)")
+        engine = OfflineEngine()
 
 @app.get("/health")
 async def health_check():
