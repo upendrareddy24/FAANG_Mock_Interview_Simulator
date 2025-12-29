@@ -19,7 +19,25 @@ app.add_middleware(
 
 # In-memory session storage
 sessions: Dict[str, CandidateSession] = {}
-engine = InterviewEngine()
+engine = None
+
+@app.on_event("startup")
+async def startup_event():
+    global engine
+    try:
+        engine = InterviewEngine()
+        print("InterviewEngine initialized successfully")
+    except Exception as e:
+        print(f"Failed to initialize InterviewEngine: {e}")
+        # We don't raise here so the app can still start and serve /health
+        engine = None
+
+@app.get("/health")
+async def health_check():
+    if engine is None:
+        return {"status": "degraded", "details": "Engine not initialized"}, 503
+    return {"status": "ok"}
+
 
 @app.post("/session/start")
 async def start_session(
@@ -34,7 +52,11 @@ async def start_session(
     if target_company not in COMPANY_PERSONAS:
         raise HTTPException(status_code=400, detail="Invalid company")
     
+    if engine is None:
+        raise HTTPException(status_code=503, detail="Interview Engine is not ready. Please define GEMINI_API_KEY.")
+
     session_id = str(uuid.uuid4())
+
     initial_state = InterviewState(
         total_rounds=3 if target_level == "L3" else (4 if target_level == "L4" else 5)
     )
@@ -67,7 +89,11 @@ async def respond(session_id: str, candidate_message: str = Body(...)):
     session = sessions[session_id]
     session.current_state.history.append({"role": "candidate", "content": candidate_message})
     
+    if engine is None:
+         raise HTTPException(status_code=503, detail="Interview Engine not available")
+
     interviewer_response = engine.get_interviewer_response(session, candidate_message)
+
     session.current_state.history.append({"role": "interviewer", "content": interviewer_response})
     
     return {"interviewer_message": interviewer_response}
@@ -78,7 +104,12 @@ async def evaluate(session_id: str):
         raise HTTPException(status_code=404, detail="Session not found")
     
     session = sessions[session_id]
+
+    if engine is None:
+         raise HTTPException(status_code=503, detail="Interview Engine not available")
+
     evaluation = engine.evaluate_round(session)
+
     
     return evaluation
 
