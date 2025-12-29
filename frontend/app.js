@@ -29,6 +29,11 @@ startBtn.addEventListener('click', async () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
+
+        if (!response.ok) {
+            throw new Error(`Server returned ${response.status}`);
+        }
+
         const result = await response.json();
         sessionId = result.session_id;
 
@@ -67,6 +72,11 @@ async function sendMessage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(content)
         });
+
+        if (!response.ok) {
+            throw new Error(`Server returned ${response.status}`);
+        }
+
         const result = await response.json();
         addMessage('interviewer', result.interviewer_message);
     } catch (error) {
