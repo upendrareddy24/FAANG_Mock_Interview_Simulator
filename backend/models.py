@@ -18,6 +18,7 @@ class InterviewState(BaseModel):
     current_round: int = 1
     total_rounds: int
     state: str = "INITIALIZATION" # INITIALIZATION, CLARIFICATION, TECHNICAL_PROBING, FOLLOW_UP, EVALUATION
+    current_phase: str = "Intro" # Added missing field
     pressure_level: int = 0
     struggle_meter: int = 0
     history: List[Dict[str, str]] = []
