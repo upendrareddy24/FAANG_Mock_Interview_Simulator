@@ -82,6 +82,19 @@ async def evaluate(session_id: str):
     
     return evaluation
 
+# Mount frontend static files
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+# Serve index.html at root
+@app.get("/")
+async def read_index():
+    return FileResponse('frontend/index.html')
+
+# Mount the entire frontend directory for assets/css/js
+app.mount("/", StaticFiles(directory="frontend"), name="frontend")
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
