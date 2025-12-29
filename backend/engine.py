@@ -11,7 +11,8 @@ load_dotenv()
 class InterviewEngine:
     def __init__(self):
         genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-        self.model = genai.GenerativeModel("gemini-1.5-flash") # Stable model name
+        self.model = genai.GenerativeModel("models/gemini-1.5-flash") # Fully qualified name
+
 
 
 
@@ -57,9 +58,10 @@ Current Interview State: {session.current_state.state}
         
         # Initialize model with system prompt
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="models/gemini-1.5-flash",
             system_instruction=system_prompt
         )
+
 
 
         

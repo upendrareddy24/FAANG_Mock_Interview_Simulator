@@ -1,0 +1,8 @@
+.env
+backend/__pycache__
+*.pyc
+models_available.txt
+models_list.txt
+debug_genai.py
+list_models.py
+assets/
