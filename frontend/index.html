@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAANG Mock Interview Simulator</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=Fira+Code&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Interview Architect</h1>
+            <p class="subtitle">FAANG-Level Mock Interview Simulator (L3 / L4 / L5)</p>
+        </header>
+
+        <!-- Step 1: Configuration -->
+        <main id="config-section">
+            <div class="config-card glass">
+                <div class="form-group">
+                    <label>Target Company</label>
+                    <select id="company">
+                        <option value="Google">Google</option>
+                        <option value="Amazon">Amazon</option>
+                        <option value="Meta">Meta</option>
+                        <option value="Apple">Apple</option>
+                        <option value="Microsoft">Microsoft</option>
+                        <option value="Oracle">Oracle</option>
+                        <option value="OpenAI-style">OpenAI-style</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Target Level</label>
+                    <select id="level">
+                        <option value="L3">L3 (Junior)</option>
+                        <option value="L4" selected>L4 (Mid-Level)</option>
+                        <option value="L5">L5 (Senior)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Role / Track</label>
+                    <select id="role">
+                        <optgroup label="General Tracks">
+                            <option value="Software Engineer (Backend)">Software Engineer (Backend)</option>
+                            <option value="DevOps / SRE">DevOps / SRE</option>
+                            <option value="Cloud Architect">Cloud Architect</option>
+                            <option value="Cybersecurity Engineer">Cybersecurity Engineer</option>
+                        </optgroup>
+                        <optgroup label="AI / ML Engineering Track">
+                            <option value="Machine Learning Engineer (MLE)">Machine Learning Engineer (MLE)</option>
+                            <option value="Applied Scientist">Applied Scientist</option>
+                            <option value="AI Platform / MLOps Engineer">AI Platform / MLOps Engineer</option>
+                            <option value="GenAI / LLM Engineer">GenAI / LLM Engineer</option>
+                            <option value="AI Infrastructure Engineer">AI Infrastructure Engineer</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Preferred Language</label>
+                    <select id="language">
+                        <option value="Python">Python</option>
+                        <option value="Java">Java</option>
+                        <option value="Go">Go</option>
+                        <option value="C++">C++</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Years of Experience</label>
+                    <input type="number" id="experience" value="3">
+                </div>
+                <div class="form-group">
+                    <label>Paste Resume / Job Description (Optional)</label>
+                    <textarea id="resume" placeholder="Paste your resume or the JD for a personalized experience..."
+                        rows="4"></textarea>
+                </div>
+                <button id="start-btn" class="primary">ENTER THE HOT SEAT</button>
+            </div>
+        </main>
+
+        <!-- Step 2: Interview Screen -->
+        <section id="interview-section" class="interview-screen" style="display: none;">
+            <div class="chat-box glass">
+                <div id="messages" class="messages">
+                    <!-- Messages will be injected here -->
+                </div>
+                <div class="input-area">
+                    <input type="text" id="user-input" placeholder="Type your response...">
+                    <button id="send-btn" class="primary" style="width: auto; margin-top: 0;">SEND</button>
+                    <button id="end-btn"
+                        style="background: var(--danger); width: auto; font-size: 12px; border-radius: 8px; color: white; border: none; padding: 0 10px; cursor: pointer;">FINISH</button>
+                </div>
+            </div>
+            <div class="scratchpad-area">
+                <textarea id="scratchpad" placeholder="// Use this as your whiteboard / notes area..."
+                    class="glass"></textarea>
+            </div>
+        </section>
+
+        <!-- Step 3: Evaluation Screen -->
+        <section id="eval-section" class="eval-screen">
+            <div class="glass" style="padding: 2rem;">
+                <h2 style="margin-bottom: 2rem;">Post-Interview Evaluation</h2>
+                <div id="scorecard" class="scorecard">
+                    <!-- Scorecard items injected here -->
+                </div>
+                <div id="detailed-feedback" class="feedback-content">
+                    <!-- Feedback injected here -->
+                </div>
+                <button onclick="location.reload()" class="primary">START NEW SESSION</button>
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
