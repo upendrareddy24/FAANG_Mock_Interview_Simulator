@@ -1,0 +1,65 @@
+[
+    {
+        "id": "two_sum",
+        "title": "Two Sum",
+        "difficulty": "Easy",
+        "description": "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
+        "example": "Input: nums = [2,7,11,15], target = 9\nOutput: [0,1]",
+        "default_code": "def twoSum(nums, target):\n    # Write your solution here\n    pass",
+        "test_cases": [
+            {
+                "input": "([2,7,11,15], 9)",
+                "output": "[0, 1]"
+            },
+            {
+                "input": "([3,2,4], 6)",
+                "output": "[1, 2]"
+            },
+            {
+                "input": "([3,3], 6)",
+                "output": "[0, 1]"
+            }
+        ],
+        "hint": "Can you use a hash map to tackle this in O(n) time?"
+    },
+    {
+        "id": "invert_tree",
+        "title": "Invert Binary Tree",
+        "difficulty": "Easy",
+        "description": "Given the root of a binary tree, invert the tree, and return its root.",
+        "example": "Input: root = [4,2,7,1,3,6]\nOutput: [4,7,2,6,3,1]",
+        "default_code": "# Definition for a binary tree node.\n# class TreeNode:\n#     def __init__(self, val=0, left=None, right=None):\n#         self.val = val\n#         self.left = left\n#         self.right = right\ndef invertTree(root):\n    pass",
+        "test_cases": [],
+        "hint": "Think recursively. Swap left and right children."
+    },
+    {
+        "id": "lru_cache",
+        "title": "LRU Cache",
+        "difficulty": "Medium",
+        "description": "Design a data structure that follows the constraints of a Least Recently Used (LRU) cache.",
+        "example": "LRUCache lRUCache = new LRUCache(2);\nlRUCache.put(1, 1); // cache is {1=1}",
+        "default_code": "class LRUCache:\n    def __init__(self, capacity: int):\n        pass\n    def get(self, key: int) -> int:\n        pass\n    def put(self, key: int, value: int) -> None:\n        pass",
+        "test_cases": [],
+        "hint": "You need a Hash Map combined with a Doubly Linked List for O(1) operations."
+    },
+    {
+        "id": "trapping_rain_water",
+        "title": "Trapping Rain Water",
+        "difficulty": "Hard",
+        "description": "Given n non-negative integers representing an elevation map where the width of each bar is 1, compute how much water it can trap after raining.",
+        "example": "Input: height = [0,1,0,2,1,0,1,3,2,1,2,1]\nOutput: 6",
+        "default_code": "def trap(height):\n    pass",
+        "test_cases": [],
+        "hint": "Try pre-computing left max and right max for each index, or use two pointers."
+    },
+    {
+        "id": "merge_intervals",
+        "title": "Merge Intervals",
+        "difficulty": "Medium",
+        "description": "Given an array of intervals where intervals[i] = [starti, endi], merge all overlapping intervals.",
+        "example": "Input: intervals = [[1,3],[2,6],[8,10],[15,18]]\nOutput: [[1,6],[8,10],[15,18]]",
+        "default_code": "def merge(intervals):\n    pass",
+        "test_cases": [],
+        "hint": "Sort the intervals by start time first."
+    }
+]

@@ -150,6 +150,41 @@
 
     </main>
 
+    <!-- Round Type Selection Modal -->
+    <div id="modal-backdrop" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+        <div class="bg-[#252526] border border-[#3e3e42] p-8 rounded-lg shadow-2xl max-w-md w-full">
+            <h2 class="text-xl font-bold text-white mb-4">Select Interview Round</h2>
+            <div class="flex flex-col gap-3">
+                <button onclick="selectRound('coding')"
+                    class="p-4 bg-[#0e639c] hover:bg-[#1177bb] rounded text-left flex items-center gap-3 transition">
+                    <span class="text-2xl">💻</span>
+                    <div>
+                        <div class="font-bold text-white">Coding Round</div>
+                        <div class="text-xs text-gray-300">Data Structures & Algorithms (LeetCode Style)</div>
+                    </div>
+                </button>
+
+                <button onclick="selectRound('design')"
+                    class="p-4 bg-[#3c3c3c] hover:bg-[#444] rounded text-left flex items-center gap-3 transition border border-[#0e639c]">
+                    <span class="text-2xl">🏗️</span>
+                    <div>
+                        <div class="font-bold text-white">System Design</div>
+                        <div class="text-xs text-gray-300">Distributed Systems & Scalability (L4+)</div>
+                    </div>
+                </button>
+
+                <button onclick="selectRound('behavioral')"
+                    class="p-4 bg-[#6A9955] hover:bg-[#569cd6] rounded text-left flex items-center gap-3 transition border border-[#0e639c]">
+                    <span class="text-2xl">🗣️</span>
+                    <div>
+                        <div class="font-bold text-white">Behavioral / Leadership</div>
+                        <div class="text-xs text-gray-300">STAR Method & Cultural Fit</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Monaco Editor Loader -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.30.1/min/vs/loader.min.js"></script>
     <script>
@@ -168,7 +203,7 @@
             });
         });
     </script>
-    <script src="pro_client.js"></script>
+    <script src="pro_client.js?v=2"></script>
 </body>
 
 </html>

@@ -27,36 +27,27 @@ class OfflineEngine:
         }
 
     def get_interviewer_response(self, session: CandidateSession, user_input: str) -> str:
-        # Simple state machine based on history length
-        history_len = len(session.current_state.history)
-        
-        # 0: Greeting (handled by main.py usually, but if called here)
-        # 2: Candidate answered greeting -> Ask Q1
-        # 4: Candidate answered Q1 -> Ask Q2
-        # ...
-        
-        # Role-specific or default questions
-        questions = self.question_bank.get(session.target_role, self.question_bank["default"])
-        
-        # Calculate which question index we are at
-        # History has [Interviewer, Candidate, Interviewer, Candidate...]
-        # Index = len // 2
-        q_index = history_len // 2
-        
-        if q_index < len(questions):
-            response = questions[q_index]
-            if q_index > 0:
-                transitions = [
-                    "That makes sense. Moving on...",
-                    "I see. Let's pivot slightly.",
-                    "Understood. Let's go deeper into that.",
-                    "Okay, good point."
-                ]
-                transition = random.choice(transitions)
-                response = f"{transition} {response}"
-            return response
-        else:
-            return "We have covered the main topics. Let's wrap up. Do you have any final questions for me?"
+        # Check round type first
+        if session.round_type == "coding":
+            # Return specific Coding Problems if it's the first message or explicitly requested
+            if "START_ROUND_CODING" in user_input or len(session.current_state.history) <= 2:
+                return """**Problem**: Invert Binary Tree
+**Description**: Given the root of a binary tree, invert the tree, and return its root.
+**Example**: Input: root = [4,2,7,1,3,6,9], Output: [4,7,2,9,6,3,1]
+**Constraints**: The number of nodes in the tree is in the range [0, 100]."""
+            else:
+                return "That looks correct. Can you optimize the space complexity?"
+
+        elif session.round_type == "design":
+            if "START_ROUND_DESIGN" in user_input or len(session.current_state.history) <= 2:
+                 return """**Design Task**: Design a URL Shortener (like Bit.ly)
+**Scale**: 100M daily active users.
+**Instructions**: Focus on the data model and hash function."""
+            else:
+                return "Good. How would you handle hash collisions?"
+
+        # Fallback to old logic if no specific round type (shouldn't happen)
+        return "I am ready. Let's begin."
 
     def evaluate_round(self, session: CandidateSession) -> Dict[str, Any]:
         return {

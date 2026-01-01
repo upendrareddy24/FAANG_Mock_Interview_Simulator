@@ -1,0 +1,46 @@
+[
+    {
+        "id": "star_challenge",
+        "title": "Challenging Project",
+        "question": "Tell me about a time you faced a significant technical challenge.",
+        "star_guide": {
+            "Situation": " Describe the context, project, and why it was important.",
+            "Task": " What was your specific responsibility?",
+            "Action": " What steps did YOU take? (Avoid 'We'). Focus on technical decisions.",
+            "Result": " What was the outcome? Quantify if possible (e.g., 'improved latency by 20%')."
+        },
+        "follow_ups": [
+            "What would you do differently now?",
+            "how did you handle the trade-offs?"
+        ]
+    },
+    {
+        "id": "star_conflict",
+        "title": "Conflict Resolution",
+        "question": "Tell me about a time you disagreed with a coworker or manager.",
+        "star_guide": {
+            "Situation": " Briefly explain the disagreement context.",
+            "Task": " Your goal was to align the team/project.",
+            "Action": " How did you communicate? Did you compromise or prove your point with data?",
+            "Result": " Did the relationship survive? Was the project successful?"
+        },
+        "follow_ups": [
+            "Did you ever have to commit even if you disagreed?",
+            "How do you handle giving feedback?"
+        ]
+    },
+    {
+        "id": "star_failure",
+        "title": "Past Failure",
+        "question": "Tell me about a time you failed.",
+        "star_guide": {
+            "Situation": " Be honest. Pick a real failure.",
+            "Task": " What were you trying to achieve?",
+            "Action": " Where did it go wrong? How did you fix it (or attempt to)?",
+            "Result": " crucial: What did you LEARN? How have you prevented it since?"
+        },
+        "follow_ups": [
+            "How did you handle the stakeholder expectations during this failure?"
+        ]
+    }
+]

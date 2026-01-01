@@ -47,6 +47,7 @@ async def start_session(
     target_level: str = Body(...),
     years_of_experience: int = Body(...),
     preferred_language: str = Body(...),
+    round_type: str = Body("coding"), # coding | design
     resume_text: str = Body(None),
     job_description: str = Body(None)
 ):
@@ -69,13 +70,14 @@ async def start_session(
         target_level=target_level,
         years_of_experience=years_of_experience,
         preferred_language=preferred_language,
+        round_type=round_type,
         resume_text=resume_text,
         job_description=job_description,
         current_state=initial_state
     )
     
     # Generate initial greeting from interviewer
-    greeting = engine.get_interviewer_response(session, "Start the interview. Introduce yourself and the round, then ask the first question or ask for clarifications.")
+    greeting = engine.get_interviewer_response(session, f"START_ROUND_{round_type.upper()}")
     
     session.current_state.history.append({"role": "interviewer", "content": greeting})
     sessions[session_id] = session
@@ -99,7 +101,47 @@ async def respond(session_id: str, candidate_message: str = Body(...)):
     
     return {"interviewer_message": interviewer_response}
 
-@app.post("/session/{session_id}/evaluate")
+@app.post("/session/{session_id}/execute")
+async def execute_code_endpoint(session_id: str, code: str = Body(..., embed=True)):
+    if session_id not in sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    session = sessions[session_id]
+    
+    import sys
+    from io import StringIO
+    
+    # Capture Output
+    old_stdout = sys.stdout
+    redirected_output = sys.stdout = StringIO()
+    
+    execution_error = None
+    try:
+        # EXECUTE UNSAFE CODE (Local Simulator Only)
+        exec(code, {})
+    except Exception as e:
+        execution_error = str(e)
+    finally:
+        sys.stdout = old_stdout
+        
+    output = redirected_output.getvalue()
+    if execution_error:
+        output += f"\nError: {execution_error}"
+        
+    # Send to AI for critique
+    context_msg = f"I ran this code:\n```python\n{code}\n```\n\nOutput:\n```\n{output}\n```"
+    session.current_state.history.append({"role": "candidate", "content": context_msg})
+    
+    if engine:
+        ai_feedback = engine.get_interviewer_response(session, context_msg)
+        session.current_state.history.append({"role": "interviewer", "content": ai_feedback})
+    else:
+        ai_feedback = "AI Offline. Code ran successfully."
+
+    return {
+        "output": output,
+        "ai_feedback": ai_feedback
+    }
 async def evaluate(session_id: str):
     if session_id not in sessions:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -122,6 +164,11 @@ from fastapi.responses import FileResponse
 @app.get("/")
 async def read_index():
     return FileResponse('frontend/index.html')
+
+# Serve Pro Interface explicitly
+@app.get("/pro")
+async def read_pro():
+    return FileResponse('frontend/pro_interface.html')
 
 # Mount the entire frontend directory for assets/css/js
 app.mount("/", StaticFiles(directory="frontend"), name="frontend")

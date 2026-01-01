@@ -32,4 +32,5 @@ class CandidateSession(BaseModel):
     target_role: str
     target_level: str
     preferred_language: str
+    round_type: str  # "coding" or "design"
     current_state: InterviewState

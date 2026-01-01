@@ -1,170 +1,181 @@
 import os
+import requests
 import json
-from typing import Dict, Any, List
+import random
 import google.generativeai as genai
-from .models import CandidateSession, InterviewState
-from .personas import COMPANY_PERSONAS
-from dotenv import load_dotenv
-
-load_dotenv()
-
-from .offline_engine import OfflineEngine
+from typing import Dict, Any, List
+from .models import CandidateSession
 
 class InterviewEngine:
     def __init__(self):
-        self.offline_engine = OfflineEngine()
-        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-        # Dynamic Model Discovery
-        try:
-            available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-            print(f"Available models: {available_models}")
-            
-            # Substrings to look for in order of preference
-            preferences = [
-                "gemini-2.0-flash-exp",
-                "gemini-2.0-flash",
-                "gemini-1.5-flash",
-                "gemini-1.5-pro",
-                "gemini-pro",
-                "gemini-1.0-pro"
-            ]
-            
-            self.prioritized_models = []
-            for pref in preferences:
-                for model_name in available_models:
-                    if pref in model_name and model_name not in self.prioritized_models:
-                        self.prioritized_models.append(model_name)
-            
-            # Fallback if discovery fails or finds nothing suitable
-            if not self.prioritized_models:
-                 print("Warning: No preferred models found. Using hardcoded fallbacks.")
-                 self.prioritized_models = ["gemini-1.5-flash", "gemini-pro"]
-                 
-        except Exception as e:
-            print(f"Failed to list models: {e}. Using fallbacks.")
-            self.prioritized_models = ["gemini-1.5-flash", "gemini-pro"]
-
-        self.current_model_index = 0
-        print(f"Using models: {self.prioritized_models}")
-
-    def _get_model(self, model_name: str, system_prompt: str = None):
-        return genai.GenerativeModel(
-            model_name=model_name,
-            system_instruction=system_prompt
-        )
-
-    def _generate_with_retry(self, func, *args, **kwargs):
-        """
-        Executes a Gemini API call with automatic fallback to the next model on 429 errors.
-        """
-        original_index = self.current_model_index
-        attempts = 0
-        max_attempts = len(self.prioritized_models)
-
-        while attempts < max_attempts:
-            current_model_name = self.prioritized_models[self.current_model_index]
+        print("Initializing Interview Engine...")
+        self.mode = "CHECKING"
+        
+        # 1. Try External API (Gemini)
+        self.api_key = os.getenv("GEMINI_API_KEY")
+        if self.api_key:
             try:
-                # Update the model instance in the arguments if it's passed, 
-                # or rely on the caller to use the current model name.
-                # Here we expect 'func' to be a lambda that creates the model/chat and runs it.
-                return func(current_model_name)
+                genai.configure(api_key=self.api_key)
+                self.model = genai.GenerativeModel('gemini-pro')
+                # Simple health check
+                self.model.generate_content("Hello")
+                self.mode = "CLOUD_AI"
+                print(">> Mode: CLOUD AI (Gemini)")
             except Exception as e:
-                error_str = str(e)
-                if "429" in error_str or "Quota exceeded" in error_str or "Resource exhausted" in error_str:
-                    print(f"Rate limit hit on {current_model_name}. Switching model...")
-                    self.current_model_index = (self.current_model_index + 1) % len(self.prioritized_models)
-                    attempts += 1
+                print(f"!! Cloud AI Failed: {e}")
+                self.mode = "FALLBACK_CHECK"
+        else:
+            self.mode = "FALLBACK_CHECK"
+
+        # 2. Try Local LLM (Ollama)
+        if self.mode == "FALLBACK_CHECK":
+            try:
+                # Check if Ollama is running on default port
+                resp = requests.get("http://localhost:11434/", timeout=2)
+                if resp.status_code == 200:
+                    self.mode = "LOCAL_LLM"
+                    print(">> Mode: LOCAL LLM (Ollama)")
                 else:
-                    # Non-retriable error
-                    raise e
+                    self.mode = "STATIC"
+            except:
+                self.mode = "STATIC"
+                
+        if self.mode == "STATIC":
+            print(">> Mode: STATIC (Offline / In-Built)")
+            self.load_static_data()
+
+    def load_static_data(self):
+        """Loads the pre-generated 'Best in Industry' offline content."""
+        base_path = os.path.dirname(__file__)
+        data_dir = os.path.join(base_path, "data")
         
-        # Reset index if all failed (to try best one again next time)
-        self.current_model_index = original_index
-        raise Exception("All models exhausted due to rate limits.")
-
-    def _generate_system_prompt(self, session: CandidateSession) -> str:
-        persona = COMPANY_PERSONAS.get(session.target_company)
-        
-        prompt = f"""
-You are an interviewer from {session.target_company}.
-Your Persona: {persona.personality}
-Focus Areas: {', '.join(persona.focus_areas)}
-Style Guidelines: {', '.join(persona.style_guidelines)}
-
-Candidate Profile:
-- Role: {session.target_role}
-- Level: {session.target_level}
-- Experience: {session.years_of_experience} years
-- Language: {session.preferred_language}
-
-Current Interview State:
-- Round Progress: {len(session.current_state.history) // 2} / {session.current_state.total_rounds} messages
-- Phase: {session.current_state.current_phase}
-
-Your Goal:
-Conduct a realistic, challenging FAANG-level interview.
-1. Start with a relevant technical question based on the role and company.
-2. If the candidate answers poorly, probe deeper or give a small hint (not the answer).
-3. If they answer well, add a constraint or scale the problem (e.g., "Now handle 1B users").
-4. Be professional but strict. Do NOT be a tutor.
-5. Keep responses concise (under 200 words) to mimic a real chat.
-"""
-        return prompt
+        try:
+            with open(os.path.join(data_dir, "coding_problems.json"), "r") as f:
+                self.coding_problems = json.load(f)
+            with open(os.path.join(data_dir, "system_design.json"), "r") as f:
+                self.design_problems = json.load(f)
+            with open(os.path.join(data_dir, "behavioral.json"), "r") as f:
+                self.behavioral_problems = json.load(f)
+        except Exception as e:
+            print(f"!! Failed to load static data: {e}. Ensure 'backend/data/' JSON files exist.")
+            self.coding_problems = []
+            self.design_problems = []
+            self.behavioral_problems = []
 
     def get_interviewer_response(self, session: CandidateSession, user_input: str) -> str:
-        system_prompt = self._generate_system_prompt(session)
-        
-        # Prepare history
-        history = []
-        for msg in session.current_state.history[:-1]:
-             role = "user" if msg["role"] == "candidate" else "model"
-             history.append({"role": role, "parts": [msg["content"]]})
-
-        def run_chat(model_name):
-            model = self._get_model(model_name, system_prompt)
-            chat = model.start_chat(history=history)
-            response = chat.send_message(user_input)
-            return response.text
-
+        """Dispatcher for generating responses based on active mode."""
+        # Check for mode reset if Cloud AI fails mid-stream (quota exhaustion)
         try:
-            return self._generate_with_retry(run_chat)
+            if self.mode == "CLOUD_AI":
+                return self._generate_cloud_response(session, user_input)
+            elif self.mode == "LOCAL_LLM":
+                return self._generate_local_response(session, user_input)
+            else:
+                return self._generate_static_response(session, user_input)
         except Exception as e:
-            print(f"API Error in get_interviewer_response: {e}. Switching to Offline Mode.")
-            return self.offline_engine.get_interviewer_response(session, user_input)
+            print(f"Error in {self.mode}: {e}. Falling back to STATIC.")
+            self.mode = "STATIC"
+            if not hasattr(self, 'coding_problems'):
+                self.load_static_data()
+            return self._generate_static_response(session, user_input)
+
+    def _generate_cloud_response(self, session: CandidateSession, user_input: str) -> str:
+        chat = self.model.start_chat(history=[])
+        # Construct context
+        context = f"You are a strict {session.target_company} {session.target_role} interviewer. " \
+                  f"Round: {session.round_type}. Candidate Level: {session.target_level}. " \
+                  f"User says: {user_input}"
+        try:
+            response = chat.send_message(context)
+            return response.text
+        except Exception as e:
+            raise e
+
+    def _generate_local_response(self, session: CandidateSession, user_input: str) -> str:
+        # Using Ollama API standard endpoint
+        prompt = f"System: Strict {session.target_company} interviewer. Context: {session.round_type}. Candidate: {user_input}. Reply:"
+        
+        payload = {
+            "model": "llama3", # Default to llama3, user can change
+            "prompt": prompt,
+            "stream": False
+        }
+        resp = requests.post("http://localhost:11434/api/generate", json=payload)
+        return resp.json().get("response", "Internal Error in Local LLM")
+
+    def _generate_static_response(self, session: CandidateSession, user_input: str) -> str:
+        """
+        The 'Super Powerful' Static Engine.
+        Uses keywords, state tracking, and pre-generated deep content.
+        """
+        history_len = len(session.current_state.history)
+        
+        # --- CODING ROUND LOGIC ---
+        if session.round_type == "coding":
+            # 1. Start: Give problem
+            if "START_ROUND" in user_input or history_len <= 1:
+                if not self.coding_problems: return "Error: No problems loaded."
+                problem = random.choice(self.coding_problems)
+                session.current_state.history.append({"role": "system", "content": f"PROBLEM_ID:{problem['id']}"})
+                return f"## {problem['title']}\n\n{problem['description']}\n\n**Example**: {problem['example']}\n\n**Start Coding** in the editor. Explain your thought process first."
+            
+            # 2. Hints
+            if "hint" in user_input.lower() or "stuck" in user_input.lower():
+                # Find current problem ID from history (simple hack)
+                for msg in reversed(session.current_state.history):
+                    if msg.get("role") == "system" and "PROBLEM_ID" in msg["content"]:
+                        pid = msg["content"].split(":")[1]
+                        prob = next((p for p in self.coding_problems if p["id"] == pid), None)
+                        if prob: return f"**Hint**: {prob['hint']}"
+                return "Consider the time complexity. Can you optimize it?"
+
+            # 3. Code Execution Feedback (from main.py context)
+            if "I ran this code" in user_input:
+                if "Error" in user_input:
+                    return "It seems there's a syntax or runtime error. Check your logic carefully."
+                return "The code runs. Now, what is the Time Complexity of your solution? Is it optimal?"
+
+            return "Go on. I'm listening."
+
+        # --- SYSTEM DESIGN LOGIC ---
+        elif session.round_type == "design":
+            # Start
+            if "START_ROUND" in user_input or history_len <= 1:
+                 if not self.design_problems: return "Error: No design problems loaded."
+                 problem = random.choice(self.design_problems)
+                 session.current_state.history.append({"role": "system", "content": f"PROBLEM_ID:{problem['id']}"})
+                 return f"## Design Task: {problem['title']}\n\n{problem['description']}\n\nRequirements:\n" + "\n".join(f"- {r}" for r in problem['requirements']) + "\n\nWhere would you like to start?"
+
+            # Simple State Machine based on keywords
+            if "?" in user_input:
+                return "That's a good question to clarify. Assume massive scale (100M+ users). Focus on availability."
+            
+            if "database" in user_input.lower() or "store" in user_input.lower():
+                return "Good choice. relational or NoSQL? How do you handle schemas?"
+            
+            if "load balancer" in user_input.lower():
+                return "Where exactly do you place the Load Balancer? Layer 4 or Layer 7?"
+
+            return "Makes sense. Draw the high-level architecture on the whiteboard."
+
+        # --- BEHAVIORAL LOGIC ---
+        elif session.round_type == "behavioral":
+            if "START_ROUND" in user_input or history_len <= 1:
+                if not self.behavioral_problems: return "Error: No behavioral questions loaded."
+                q = self.behavioral_problems[0]
+                return f"Let's start. **{q['question']}**\n\n(Use the STAR method: Situation, Task, Action, Result)"
+            
+            # Just cycle through prompts or ask specific STAR follow-ups
+            if len(user_input) < 50:
+                return "Can you elaborate? That seems a bit brief for a senior role."
+            
+            return "Interesting. What was the specific outcome of your ACTIONS? ( The 'R' in STAR)"
+
+        return "I am listening."
 
     def evaluate_round(self, session: CandidateSession) -> Dict[str, Any]:
-        evaluation_prompt = f"""
-As a Principal Engineer at {session.target_company}, evaluate the following interview transcript for an {session.target_level} {session.target_role} position.
-
-Transcript:
-{json.dumps(session.current_state.history, indent=2)}
-
-Provide a detailed evaluation in JSON format with the following fields:
-- "scorecard": {{ 
-    "Technical Correctness": 1-5, 
-    "Communication": 1-5, 
-    "Judgment/Tradeoffs": 1-5, 
-    "Problem Understanding": 1-5,
-    "Role-Specific depth": 1-5 (e.g., ML Rigor if AI role, System Scalability if SDE)
-  }}
-- "strong_signals": list of things they did well.
-- "weak_signals": list of things they struggled with.
-- "interviewer_expectation_met": boolean.
-- "detailed_feedback": summary for the candidate.
-- "hiring_recommendation": "Strong Hire", "Hire", "Lean Hire", "No Hire".
-- "ideal_solution_summary": a brief explanation of how a top candidate would have handled this specific scenario, including common AI interview mistakes to avoid if applicable.
-- "improvement_plan": "A 14-day roadmap focusing on the missing depth areas identified."
-"""
-        def run_eval(model_name):
-            model = self._get_model(model_name)
-            response = model.generate_content(
-                evaluation_prompt,
-                generation_config={"response_mime_type": "application/json"}
-            )
-            return json.loads(response.text)
-
-        try:
-            return self._generate_with_retry(run_eval)
-        except Exception as e:
-            print(f"API Error in evaluate_round: {e}. Switching to Offline Mode.")
-            return self.offline_engine.evaluate_round(session)
+        return {
+            "score": "N/A (Static Mode)",
+            "feedback": "This session was run in Offline Mode. Self-grade based on the test cases passed and STAR checklist.",
+            "mode": self.mode
+        }
