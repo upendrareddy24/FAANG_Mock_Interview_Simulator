@@ -175,7 +175,24 @@ class InterviewEngine:
 
     def evaluate_round(self, session: CandidateSession) -> Dict[str, Any]:
         return {
-            "score": "N/A (Static Mode)",
-            "feedback": "This session was run in Offline Mode. Self-grade based on the test cases passed and STAR checklist.",
+            "scorecard": {
+                "Technical Correctness": 3,
+                "Communication": 4,
+                "Problem Solving": 3,
+                "Code Quality": 4,
+                "System Design Scale": 3
+            },
+            "strong_signals": [
+                "Good understanding of the problem statement.",
+                "Clear communication."
+            ],
+            "weak_signals": [
+                "Could optimize time complexity further.",
+                "Detail in system components was high-level."
+            ],
+            "hiring_recommendation": "Lean Hire",
+            "detailed_feedback": "This is a STATIC evaluation (Offline Mode). In a real interview, you should focus on driving the conversation. Since this is an offline simulation, please review your code against standard solutions.",
+            "ideal_solution_summary": "Ideally, utilize a HashMap for O(1) lookups or a distributed cache like Redis for the system design component.",
+            "improvement_plan": "Practice 5 more Medium LeetCode problems this week. Review 'Designing Data-Intensive Applications' Chapter 5 (Replication).",
             "mode": self.mode
         }
