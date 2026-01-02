@@ -142,6 +142,7 @@ async def execute_code_endpoint(session_id: str, code: str = Body(..., embed=Tru
         "output": output,
         "ai_feedback": ai_feedback
     }
+@app.post("/session/{session_id}/evaluate")
 async def evaluate(session_id: str):
     if session_id not in sessions:
         raise HTTPException(status_code=404, detail="Session not found")
